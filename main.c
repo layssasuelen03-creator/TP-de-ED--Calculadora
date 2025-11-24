@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "calculadora.h"
+#include "expressao.h"
 
 double my_fabs(double x) 
 {

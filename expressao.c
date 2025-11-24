@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <math.h>
-#include "calculadora.h"
+#include "expressao.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -37,6 +37,116 @@ static void normalize_tokens(const char *in, char *out, size_t outsz)
         strncat(out, start, p - start);
         first = 0;
     }
+}
+
+/* INFIXA → POSFIXA */
+int precedence(char op) 
+{
+    if (op == '+' || op == '-') return 1;
+    if (op == '*' || op == '/' || op == '%') return 2;
+    if (op == '^') return 3;
+    return 0;
+}
+
+int is_operator(char c) {
+    return c=='+'||c=='-'||c=='*'||c=='/'||c=='%'||c=='^';
+}
+
+char * getFormaPosFixa(char *infixa) 
+{
+
+    static char out[1024];
+    out[0] = '\0';
+
+    char stack[256];
+    int top = -1;
+
+    char token[128];
+    int j = 0;
+
+    for (int i = 0; infixa[i]; i++) 
+    {
+
+        char c = infixa[i];
+
+        if (isspace(c))
+            continue;
+
+        if (isdigit(c) || c == '.') 
+        {
+            token[j++] = c;
+
+            if (!isdigit(infixa[i+1]) && infixa[i+1] != '.') 
+            {
+                token[j] = '\0';
+                strcat(out, token);
+                strcat(out, " ");
+                j = 0;
+            }
+        }
+
+        else if (isalpha(c)) 
+        {
+            token[j++] = c;
+
+            if (!isalpha(infixa[i+1])) 
+            {
+                token[j] = '\0';
+                stack[++top] = '#'; 
+                strcat(out, token);
+                strcat(out, " ");
+                j = 0;
+            }
+        }
+
+        else if (c == '(') 
+        {
+            stack[++top] = c;
+        }
+
+        else if (c == ')') 
+        {
+
+            while (top >= 0 && stack[top] != '(') 
+            {
+                char op = stack[top--];
+                if (op != '#') {
+                    char buf[4];
+                    sprintf(buf, "%c ", op);
+                    strcat(out, buf);
+                }
+            }
+            top--; 
+        }
+
+        else if (is_operator(c)) 
+        {
+            while (top >= 0 && is_operator(stack[top]) && precedence(stack[top]) >= precedence(c)) 
+                {
+
+                      char op = stack[top--];
+                      char buf[4];
+                      sprintf(buf, "%c ", op);
+                      strcat(out, buf);
+                }
+
+            stack[++top] = c;
+        }
+    }
+
+
+    while (top >= 0) 
+    {
+        char op = stack[top--];
+        if (op != '(' && op != '#') 
+        {
+            char buf[4];
+            sprintf(buf, "%c ", op);
+            strcat(out, buf);
+        }
+    }
+
+    return out;
 }
 
 /* POSFIXA -> INFIXA */
